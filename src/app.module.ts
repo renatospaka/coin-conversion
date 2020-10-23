@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TaskModule } from './task/task.module';
 
 @Module({
-  imports: [TaskModule],
+  imports: [],
 })
 export class AppModule {}
