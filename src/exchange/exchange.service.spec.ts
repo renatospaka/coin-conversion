@@ -1,20 +1,30 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CurrencyService } from '../currency/currency.service';
 import { ExchangeService } from './exchange.service';
 
 describe('ExchangeService', () => {
   let service: ExchangeService;
+  let currencyService: CurrencyService;
 
   beforeEach(async () => {
+    const currencyServiceMock = {
+      getCurrency: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ExchangeService],
+      providers: [
+        ExchangeService, 
+        { provide: CurrencyService, useFactory: () => currencyServiceMock }
+      ],
     }).compile();
 
     service = module.get<ExchangeService>(ExchangeService);
+    currencyService = module.get<CurrencyService>(CurrencyService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(service).toBeDefined(); 
   });
   
   describe('convertAmount()', () => {
@@ -29,5 +39,17 @@ describe('ExchangeService', () => {
         .resolves
         .not.toThrow();
     });
+
+    it('should call getCurrency twice.', async () => {
+      await service.convertAmount({from: 'USD', to: 'BRL', amount: 1});
+      await expect(currencyService.getCurrency())
+        .toBeCalledTimes(2);
+    });
+
+    it('should call getCurrency with correct params.', async () => {
+      await service.convertAmount({from: 'USD', to: 'BRL', amount: 1});
+      await expect(currencyService.getCurrency()).toBeCalledWith('USD');
+      await expect(currencyService.getCurrency()).toHaveBeenLastCalledWith('BRL');
+    }); 
   });
 });
